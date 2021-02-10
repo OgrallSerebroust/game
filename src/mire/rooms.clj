@@ -1,4 +1,6 @@
-(ns mire.rooms)
+(ns mire.rooms
+  (:require [mire.map_generation :as map_gen])
+  )
 
 (def rooms (ref {}))
 
@@ -23,9 +25,9 @@
 (defn add-rooms
   "Look through all the files in a dir for files describing rooms and add
   them to the mire.rooms/rooms map."
-  [dir]
-  (dosync
-   (alter rooms load-rooms dir)))
+  []
+  (def rooms (ref (map_gen/gen_rooms 6)))
+  )
 
 (defn room-contains?
   [room thing]
