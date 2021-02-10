@@ -59,8 +59,9 @@
 (defn inventory
   "See what you've got."
   []
-  (str "You are carrying:\n"
-       (str/join "\n" (seq @player/*inventory*))))
+  (str "You are carrying:" player/eol
+       (str/join player/eol (seq @player/*inventory*))
+       "\nYou have " (.get player/*keys-count*) " keys." player/eol))
 
 (defn detect
   "If you have the detector, you can see which room an item is in."
@@ -86,9 +87,25 @@
 (defn help
   "Show available commands and what they do."
   []
-  (str/join "\n" (map #(str (key %) ": " (:doc (meta (val %))))
-                      (dissoc (ns-publics 'mire.commands)
-                              'execute 'commands))))
+  (str
+   (str/join player/eol (map #(str (key %) ": " (:doc (meta (val %))))
+                             (dissoc (ns-publics 'mire.commands)
+                                     'execute 'commands))) player/eol))
+
+(defn score
+  "Show players score."
+  []
+  (str "Scoreboard" player/eol
+       (str/join player/eol (map #(str (key %) ": " (val %)) (reverse (sort-by #(val %) @player/scores)))) player/eol))
+
+; TODO: attack
+
+(defn status
+  "Player status"
+  []
+  (str
+   "You health: " (@player/health player/*name*) "." player/eol
+   "You score: " (@player/scores player/*name*) "." player/eol))
 
 ;; Command data
 
