@@ -14,25 +14,30 @@
 (defn look
   "Get a description of the surrounding environs and its contents."
   []
-  (str (:desc @player/*current-room*)
-       "\nExits: " (keys @(:exits @player/*current-room*)) "\n"
-       (str/join "\n" (map #(str "There is " % " here.\n")
-                           @(:items @player/*current-room*)))))
+  (str "You're in the " (:name @player/*current-room*) (:desc @player/*current-room*)
+       player/eol "Exits: " (keys @(:exits @player/*current-room*)) player/eol
+       (str/join player/eol (map #(str "There is " % " here." player/eol)
+                                 @(:items @player/*current-room*)))
+       (if (empty? (disj @(:inhabitants @player/*current-room*) player/*name*))
+         (str "You are alone in the room." player/eol)
+         (str "Players: " (str/join ", " (disj @(:inhabitants @player/*current-room*) player/*name*)) "." player/eol)
+         )
+       )
+  )
 
 (defn move
-  "\"♬ We gotta get out of this place... ♪\" Give a direction."
+  " Give a direction."
   [direction]
   (dosync
-   (let [target-name ((:exits @player/*current-room*) (keyword direction))
-         target (@rooms/rooms target-name)]
+   (let [target ((keyword direction) @(:exits @player/*current-room*))]
      (if target
        (do
          (move-between-refs player/*name*
                             (:inhabitants @player/*current-room*)
-                            (:inhabitants target))
-         (ref-set player/*current-room* target)
+                            (:inhabitants @target))
+         (ref-set player/*current-room* @target)
          (look))
-       "You can't go that way."))))
+       (str "You can't go that way." player/eol)))))
 
 (defn grab
   "Pick something up."
