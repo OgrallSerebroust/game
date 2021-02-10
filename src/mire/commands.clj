@@ -102,16 +102,20 @@
                "inventory" inventory
                "detect" detect
                "look" look
-               "say" say
-               "help" help})
+               "help" help
+               "score" score
+               "attack" attack
+               "status" status
+               "get-existing-items" player/get-existing-items})
 
 ;; Command handling
 
 (defn execute
   "Execute a command that is passed to us."
   [input]
-  (try (let [[command & args] (.split input " +")]
-         (apply (commands command) args))
-       (catch Exception e
-         (.printStackTrace e (new java.io.PrintWriter *err*))
-         "You can't do that!")))
+  (try
+    (let [[command & args] (.split input " +")]
+      (apply (commands command) args))
+    (catch Exception e
+      (.printStackTrace e (new java.io.PrintWriter *err*))
+      "You can't do that!")))
