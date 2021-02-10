@@ -69,11 +69,43 @@
    (if (> (@health *name*) max-health)
      (set-health-value *name* 50))))
 
-; kill-player-for
+(defn kill-player-for [target time room]
+  "Remove player from room for 'time' seconds
+   then restore all health and return to the same room"
+  (.start (Thread. (fn []
+                     (binding [*out* (streams target)]
+                       (dosync
+                        (alter (:inhabitants @room) disj target))
+                       (println)
+                       (println (str "You were killed. Respawn in " time " sec."))
+                       (Thread/sleep (* time 1000))
+                       (set-health-value target max-health)
+                       (dosync
+                        (alter (:inhabitants @room) conj target))
+                       (println "You are ready to go.")
+                       (print prompt)(flush))))))
 
 
-; attack
-
+(defn attack [target]
+  "Deal damage to player.
+   Return 0 target don't exist
+          1 damage was done
+          2 target died."
+  (dosync
+   (if (contains? @health target)
+     (do
+       (commute health assoc target (- (@health target)  (@attack-values *name*) ))
+       (if (<= (@health target) 0)
+         (do
+           (kill-player-for target 10 *current-room*)
+           (add-points points-for-kill)
+           2)
+         (do
+           (commute health assoc *name* (- (@health *name*) (@attack-values target) ))
+           (if (<= (@health *name* ) 0)
+             (kill-player-for *name* respawn-time *current-room*))
+           1)))
+     0)))
 (defn heal [target]
   "Heal the player.
    Return 0 target don't exist or his health is full
