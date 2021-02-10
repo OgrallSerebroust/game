@@ -106,15 +106,8 @@
              (kill-player-for *name* respawn-time *current-room*))
            1)))
      0)))
-(defn heal [target]
-  "Heal the player.
-   Return 0 target don't exist or his health is full
-          1 process of heal was succesful"
-  (dosync
-   (if (<= (@health target) 50)
-     (do
-       (commute health assoc target (+ (@health target)  (@heals-values *name*) ))1)
-     0)))
+
+; heal
 
 (defn get-health []
   "Get health value of current player"

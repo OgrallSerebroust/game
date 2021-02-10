@@ -44,22 +44,96 @@
   [thing]
   (dosync
    (if (rooms/room-contains? @player/*current-room* thing)
-     (do (move-between-refs (keyword thing)
+     (case thing
+       "keys" (do
+                (.set player/*keys-count* (inc (.get player/*keys-count*)))
+                (alter (:items @player/*current-room*) disj :keys)
+                (str "You picked up keys." player/eol))
+       "card of Health (weak)" (do
+                                 (commute player/health assoc player/*name* (+ (@player/health player/*name*) 10))
+                                 (alter (:items @player/*current-room*) disj :Health_weak)
+                                 (str "U have +10 health" player/eol))
+       "card of Health (mid)" (do
+                                (commute player/health assoc player/*name* (+ (@player/health player/*name*) 15))
+                                (alter (:items @player/*current-room*) disj :Health_mid)
+                                (str "U have +15 health" player/eol))
+       "card of Health (strong)" (do
+                                   (commute player/health assoc player/*name* (+ (@player/health player/*name*) 25))
+                                   (alter (:items @player/*current-room*) disj :Health_str)
+                                   (str "U have +25 health" player/eol))
+       "card of Damage (strong)" (do
+                                   (commute player/attack-values assoc player/*name* (+ (@player/attack-values player/*name*) 20))
+                                   (move-between-refs (keyword thing) (:items @player/*current-room*) player/*inventory*)
+                                   (alter (:items @player/*current-room*) disj :Damage_str)
+                                   (str "U damage +20, great power" player/eol))
+       "card of Damage (weak)" (do
+                                 (commute player/attack-values assoc player/*name* (+ (@player/attack-values player/*name*) 10))
+                                 (move-between-refs (keyword thing) (:items @player/*current-room*) player/*inventory*)
+                                 (alter (:items @player/*current-room*) disj :Damage_weak)
+                                 (str "U damage +10, meh" player/eol))
+       "card of Damage (mid)" (do
+                                (commute player/attack-values assoc player/*name* (+ (@player/attack-values player/*name*) 15))
+                                (move-between-refs (keyword thing) (:items @player/*current-room*) player/*inventory*)
+                                (alter (:items @player/*current-room*) disj :Damage_mid)
+                                (str "U damage +15, goood" player/eol))
+       "bonus2" (do
+                  (player/add-points 5000)
+                  (alter (:items @player/*current-room*) disj :bonus2)
+                  (str "Some bonus, nice." player/eol))
+       "bonus" (do
+                 (player/add-points 10000)
+                 (alter (:items @player/*current-room*) disj :bonus)
+                 (str "bonus, hah." player/eol))
+       "heal_bonus" (do
+                      (commute player/heals-values assoc player/*name* (+ (@player/heals-values player/*name*) 10))
+                      (move-between-refs (keyword thing) (:items @player/*current-room*) player/*inventory*)
+                      (alter (:items @player/*current-room*) disj :heal_bonus)
+                      (str "U can heal +10, good luck" player/eol))
+
+       "maxBonus" (do
+                    (player/add-points 20000)
+                    (alter (:items @player/*current-room*) disj :greatBonus)
+                    (str "Jackpot, yeah!" player/eol))
+
+       "death" (commute player/health assoc player/*name* (- (@player/health player/*name*) 80))
+       (do
+         (move-between-refs (keyword thing)
                             (:items @player/*current-room*)
                             player/*inventory*)
-         (str "You picked up the " thing "."))
-     (str "There isn't any " thing " here."))))
+         (str "You picked up the " thing "." player/eol)))
+     (str "There isn't any " thing " here." player/eol))))
 
 (defn discard
-  "Put something down that you're carrying."
+  "Put down that you're carrying."
   [thing]
   (dosync
    (if (player/carrying? thing)
-     (do (move-between-refs (keyword thing)
-                            player/*inventory*
-                            (:items @player/*current-room*))
-         (str "You dropped the " thing "."))
-     (str "You're not carrying a " thing "."))))
+     (case thing
+       "keys" (if (> (.get player/*keys-count*) 0)
+                (do
+                  (.set player/*keys-count* (dec (.get player/*keys-count*)))
+                  (alter (:items @player/*current-room*) conj :keys)
+                  (str "You dropped keys." player/eol))
+                "You don't have any keys.")
+       "card of Damage (strong)" (do
+                                   (commute player/attack-values assoc player/*name* (- (@player/attack-values player/*name*) 20))
+                                   (move-between-refs (keyword thing) player/*inventory* (:items @player/*current-room*))
+                                   (alter (:items @player/*current-room*) conj :Damage_str)
+                                   (str "You dropped the " thing "." player/eol))
+       "card of Damage (weak)" (do
+                                 (commute player/attack-values assoc player/*name* (- (@player/attack-values player/*name*) 10))
+                                 (move-between-refs (keyword thing) player/*inventory* (:items @player/*current-room*))
+                                 (alter (:items @player/*current-room*) conj :Damage_weak)
+                                 (str "You dropped the " thing "." player/eol))
+       "card of Damage (mid)" (do
+                                (commute player/attack-values assoc player/*name* (- (@player/attack-values player/*name*) 15))
+                                (move-between-refs (keyword thing) player/*inventory* (:items @player/*current-room*))
+                                (alter (:items @player/*current-room*) conj :Damage_mid)
+                                (str "You dropped the " thing "." player/eol))
+       (do
+         (move-between-refs (keyword thing) player/*inventory* (:items @player/*current-room*))
+         (str "You dropped the " thing "." player/eol)))
+     (str "You're not carrying a " thing "." player/eol))))
 
 (defn inventory
   "See what you've got."
@@ -112,6 +186,10 @@
    "You health: " (@player/health player/*name*) "." player/eol
    "You score: " (@player/scores player/*name*) "." player/eol))
 
+; Attack Stefan
+
+; heal Max
+
 ;; Command data
 
 (def commands {"move" move,
@@ -127,6 +205,7 @@
                "help" help
                "score" score
                "attack" attack
+               ; heal Max
                "status" status
                "get-existing-items" player/get-existing-items})
 
