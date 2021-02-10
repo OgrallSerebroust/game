@@ -1,0 +1,5 @@
+mire-*.jar
+lib/
+classes/
+target/
+.idea/
