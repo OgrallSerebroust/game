@@ -186,7 +186,25 @@
    "You health: " (@player/health player/*name*) "." player/eol
    "You score: " (@player/scores player/*name*) "." player/eol))
 
-; Attack Stefan
+(defn attack
+      "Attack other player"
+      [target-number]
+      (if-let [target (nth (vec (disj @(:inhabitants @player/*current-room*) player/*name*)) (Integer/parseInt target-number))]
+              (case (player/attack target)
+                    2 (str "You killed " target "." player/eol)
+                    1 (do
+                        (binding [*out* (player/streams target)]
+                                 (println)
+                                 (println (str "You was attacked by " player/*name* "."))
+                                 (println (str "You hp is " (@player/health target) "."))
+                                 (println)
+                                 (print player/prompt) (flush))
+                        (str "You attacked " target "." player/eol
+                             target " counterattack." player/eol
+                             "You hp is " (@player/health player/*name*) "." player/eol))
+                    0 (str target " isn't here." player/eol))
+              (str "There is not " target-number "th player here")))
+
 
 ; heal Max
 
